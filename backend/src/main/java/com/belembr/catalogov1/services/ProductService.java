@@ -12,8 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.belembr.catalogov1.dto.CategoryDTO;
 import com.belembr.catalogov1.dto.ProductDTO;
+import com.belembr.catalogov1.entities.Category;
 import com.belembr.catalogov1.entities.Product;
+import com.belembr.catalogov1.repositories.CategoryRepository;
 import com.belembr.catalogov1.repositories.ProductRepository;
 import com.belembr.catalogov1.services.exceptions.DataBaseException;
 import com.belembr.catalogov1.services.exceptions.ResourceNotFoundException;
@@ -23,6 +26,9 @@ public class ProductService {
 
 	@Autowired
 	private ProductRepository repository;
+	
+	@Autowired
+	private CategoryRepository categoryRepository;
 
 	@Transactional(readOnly = true)
 	public Page<ProductDTO> findAllPaged(PageRequest pageRequest) {
@@ -42,18 +48,20 @@ public class ProductService {
 	@Transactional
 	public ProductDTO insert(ProductDTO dto) {
 		Product entity = new Product();
-		//entity.setName(dto.getName());
+		copyDtoToEntity(dto,entity);
 
 		entity = repository.save(entity);
 
 		return new ProductDTO(entity);
 	}
 
+
+
 	@Transactional
 	public ProductDTO update(Long id, ProductDTO dto) {
 		try {
 			Product entity = repository.getReferenceById(id);
-		//	entity.setName(dto.getName());
+			copyDtoToEntity(dto,entity);
 			entity = repository.save(entity);
 
 			return new ProductDTO(entity);
@@ -72,5 +80,20 @@ public class ProductService {
 		}
 
 	}
-
+	
+	private void copyDtoToEntity(ProductDTO dto, Product entity) {
+		entity.setName(dto.getName());
+		entity.setDescription(dto.getDescription());
+		entity.setPrice(dto.getPrice());
+		entity.setDate(dto.getDate());
+		entity.setImgUrl(dto.getImgUrl());
+		
+		entity.getCategories().clear();
+		for(CategoryDTO catDto: dto.getCategories()) {
+			Category category = categoryRepository.getReferenceById(catDto.getId());
+			
+			entity.getCategories().add(category);
+		}
+		
+	}
 }
